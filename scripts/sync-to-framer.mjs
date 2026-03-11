@@ -93,8 +93,19 @@ async function main() {
       collection = await framer.getManagedCollection()
       console.log(`✅ Found existing collection: "${COLLECTION_NAME}"`)
     } catch {
-      console.log(`🆕 Collection not found — creating "${COLLECTION_NAME}"…`)
-      collection = await framer.createManagedCollection(COLLECTION_NAME)
+      try {
+        console.log(`🆕 Collection not found — creating "${COLLECTION_NAME}"…`)
+        collection = await framer.createManagedCollection(COLLECTION_NAME)
+      } catch (createErr) {
+        if (createErr.message?.includes("already exists")) {
+          // Collection was created by a previous run but getManagedCollection()
+          // lost the association — re-fetch it
+          console.log(`✅ Collection already exists — re-fetching…`)
+          collection = await framer.getManagedCollection()
+        } else {
+          throw createErr
+        }
+      }
     }
 
     // ── Sync field schema ──────────────────────────────────────────────────
