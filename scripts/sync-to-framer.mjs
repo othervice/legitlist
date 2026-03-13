@@ -26,30 +26,9 @@ const LOGO_BASE =
 
 const COLLECTION_NAME = "Vendors"
 
-const RETRY_ATTEMPTS = 6
+const RETRY_ATTEMPTS = 4
 const RETRY_DELAY_MS = 10000
 const RETRY_MAX_DELAY_MS = 60000
-
-const RETRIABLE_ERROR_PATTERNS = [
-  /publish failed/i,
-  /deploy failed/i,
-  /timeout/i,
-  /temporar/i,
-  /rate limit/i,
-  /econnreset|etimedout|eai_again|enotfound/i,
-  /\b5\d\d\b/,
-]
-
-const NON_RETRIABLE_ERROR_PATTERNS = [
-  /unauthorized/i,
-  /forbidden/i,
-  /invalid api key/i,
-  /permission denied/i,
-  /validation failed/i,
-  /invalid field/i,
-  /bad request/i,
-  /missing framer_project_url|missing framer_api_key/i,
-]
 
 // CMS field schema — edit with care; removing fields will lose CMS data
 const FIELDS = [
@@ -98,15 +77,6 @@ function errorText(err) {
   return [err.message, err.cause?.message, err.stack].filter(Boolean).join("\n")
 }
 
-function isRetriableError(err, label) {
-  const text = errorText(err)
-  if (NON_RETRIABLE_ERROR_PATTERNS.some((pattern) => pattern.test(text))) {
-    return false
-  }
-  return RETRIABLE_ERROR_PATTERNS.some((pattern) => pattern.test(text))
-    || /publish|deploy/i.test(label)
-}
-
 async function withRetry(label, fn, attempts = RETRY_ATTEMPTS, baseDelayMs = RETRY_DELAY_MS) {
   let lastError
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -115,11 +85,6 @@ async function withRetry(label, fn, attempts = RETRY_ATTEMPTS, baseDelayMs = RET
     } catch (err) {
       lastError = err
       const details = errorText(err)
-      if (!isRetriableError(err, label)) {
-        console.error(`❌ ${label} failed with non-retriable error:`)
-        console.error(details)
-        throw err
-      }
       if (attempt === attempts) break
       const retryDelayMs = Math.min(baseDelayMs * attempt, RETRY_MAX_DELAY_MS)
       const message = err?.message || String(err)
