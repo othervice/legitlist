@@ -16,6 +16,10 @@ import { connect } from "framer-api"
 import fs from "node:fs"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
+import { fileURLToPath } from "node:url"
+
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
+const REPO_ROOT = path.resolve(SCRIPT_DIR, "..")
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +54,7 @@ const FIELDS = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function loadVendors() {
-  const vendorsDir = path.resolve("./vendors")
+  const vendorsDir = path.join(REPO_ROOT, "vendors")
   const files = fs
     .readdirSync(vendorsDir)
     .filter((f) => f.endsWith(".json") && !f.startsWith("_")) // skip _schema.json, _example.json, etc.
@@ -123,7 +127,7 @@ function vendorToItem(v) {
 
 function runValidationPreflight() {
   console.log("🧪 Running validation preflight…")
-  const validatorPath = path.resolve("./scripts/validate-all.mjs")
+  const validatorPath = path.join(REPO_ROOT, "scripts", "validate-all.mjs")
   const result = spawnSync(process.execPath, [validatorPath], { stdio: "inherit" })
 
   if (result.status !== 0) {

@@ -9,15 +9,19 @@ import Ajv from "ajv"
 import addFormats from "ajv-formats"
 import fs from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
+
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
+const REPO_ROOT = path.resolve(SCRIPT_DIR, "..")
 
 const ajv = new Ajv({ strict: false, allErrors: true })
 addFormats(ajv)
 
-const schemaPath = path.resolve("./vendors/_schema.json")
+const schemaPath = path.join(REPO_ROOT, "vendors", "_schema.json")
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"))
 const validate = ajv.compile(schema)
 
-const vendorsDir = path.resolve("./vendors")
+const vendorsDir = path.join(REPO_ROOT, "vendors")
 const allVendorEntries = fs.readdirSync(vendorsDir)
 const files = allVendorEntries
   .filter((f) => f.endsWith(".json") && !f.startsWith("_")) // skip _schema.json, _example.json, etc.
@@ -75,7 +79,7 @@ for (const file of files) {
   }
 
   // Logo is required; missing or oversized is an error
-  const logoPath = path.resolve("./logos", data.logo)
+  const logoPath = path.join(REPO_ROOT, "logos", data.logo)
   if (!fs.existsSync(logoPath)) {
     console.error(`❌ ${file} — Logo not found: ${data.logo}`)
     errors++
