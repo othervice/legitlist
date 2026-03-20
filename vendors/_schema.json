@@ -8,7 +8,6 @@
     "website",
     "region",
     "country",
-    "logo",
     "active"
   ],
   "additionalProperties": false,
@@ -48,11 +47,6 @@
       "minLength": 2,
       "maxLength": 60,
       "description": "Country name (full name preferred, e.g. 'Italy', 'Germany', 'Australia'; common abbreviations like 'USA' are also accepted)"
-    },
-    "logo": {
-      "type": "string",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(png|jpg|webp)$",
-      "description": "Logo filename only (e.g. 'pivotal-mining.png') \u2014 stored in the 'logos/' folder, png/jpg/webp, square 400\u00d7400px recommended"
     },
     "description": {
       "type": "string",

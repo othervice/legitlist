@@ -103,7 +103,6 @@ Paste this example, then replace the sample details with your own shop details:
   "website": "https://yourshop.com",
   "region": "Europe",
   "country": "Italy",
-  "logo": "your-shop-name.png",
   "description": "Tell miners who you are — what you sell, where you ship, how long you've been at it. Keep it under 280 characters.",
   "active": true,
   "social": {
@@ -120,6 +119,7 @@ A few notes:
 - `description` is optional, but recommended
 - leave `active` as `true`
 - `website` must be a full HTTPS URL (starting with `https://`) and cannot be empty
+- do not add a `logo` field in JSON — logo is inferred from `logos/{slug}.png|jpg|webp`
 - social fields may be full HTTPS URLs or empty strings: `""`
 - social fields supported by schema: `x`, `instagram`, `youtube`, `tiktok`, `nostr`
 - only these social keys are allowed in JSON (do not add custom keys like `discord`)
@@ -196,8 +196,8 @@ If your PR check fails, use this checklist:
   `slug` must be exactly the filename without `.json`
   Example: file `pivotal-mining.json` -> `"slug": "pivotal-mining"`
 
-- **Logo filename does not match slug**
-  Your logo must use the same name as your slug
+- **Logo filename issue**
+  Your logo must use the same slug and one supported extension (`.png`, `.jpg`, or `.webp`). Keep only one matching logo file.
   Example: `pivotal-mining.png`
 
 - **Logo not found**

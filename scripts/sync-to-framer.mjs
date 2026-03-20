@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..")
+const LOGO_EXTENSIONS = ["png", "jpg", "webp"]
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,23 @@ function loadVendors() {
   return vendors
 }
 
+function resolveLogoForSlug(slug) {
+  const logosDir = path.join(REPO_ROOT, "logos")
+  const matches = LOGO_EXTENSIONS
+    .map((ext) => `${slug}.${ext}`)
+    .filter((name) => fs.existsSync(path.join(logosDir, name)))
+
+  if (matches.length === 0) {
+    throw new Error(`Logo not found for slug '${slug}'. Expected one of: ${slug}.png, ${slug}.jpg, ${slug}.webp`)
+  }
+
+  if (matches.length > 1) {
+    throw new Error(`Multiple logo files found for slug '${slug}': ${matches.join(", ")}`)
+  }
+
+  return matches[0]
+}
+
 // FieldDataEntryInput helpers — each field must be a typed object, not a plain value
 const str  = (value)        => ({ type: "string", value: value ?? "" })
 const link = (value)        => ({ type: "link",   value: value || null })
@@ -104,7 +122,7 @@ async function withRetry(label, fn, attempts = RETRY_ATTEMPTS, baseDelayMs = RET
   throw lastError
 }
 
-function vendorToItem(v) {
+function vendorToItem(v, logoFilename) {
   return {
     id: v.slug,
     slug: v.slug,
@@ -114,7 +132,7 @@ function vendorToItem(v) {
       region:      str(v.region),
       country:     str(v.country),
       vendorActive:str(v.active ? "true" : "false"),
-      logoUrl:     img(`${LOGO_BASE}logos/${v.logo}`),
+      logoUrl:     img(`${LOGO_BASE}logos/${logoFilename}`),
       description: str(v.description),
       socialX:     link(v.social?.x),
       socialIg:    link(v.social?.instagram),
@@ -180,7 +198,7 @@ async function main() {
     console.log("ℹ️  Soft sync mode — stale items are not deleted automatically")
 
     // ── Upsert all vendors (visibility controlled by active) ──────────────
-    const items = vendors.map(vendorToItem)
+    const items = vendors.map((vendor) => vendorToItem(vendor, resolveLogoForSlug(vendor.slug)))
     console.log(`📤 Upserting ${items.length} vendor(s)…`)
     await collection.addItems(items) // addItems performs an upsert by id
 

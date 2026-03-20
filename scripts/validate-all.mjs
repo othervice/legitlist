@@ -22,11 +22,19 @@ const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"))
 const validate = ajv.compile(schema)
 
 const vendorsDir = path.join(REPO_ROOT, "vendors")
+const logosDir = path.join(REPO_ROOT, "logos")
 const allVendorEntries = fs.readdirSync(vendorsDir)
 const files = allVendorEntries
   .filter((f) => f.endsWith(".json") && !f.startsWith("_")) // skip _schema.json, _example.json, etc.
 
 let errors = 0
+const LOGO_EXTENSIONS = ["png", "jpg", "webp"]
+
+function findLogoMatches(slug) {
+  return LOGO_EXTENSIONS
+    .map((ext) => `${slug}.${ext}`)
+    .filter((name) => fs.existsSync(path.join(logosDir, name)))
+}
 
 // Guardrail: reject unexpected non-JSON vendor files (e.g. missing .json extension)
 for (const file of allVendorEntries) {
@@ -70,27 +78,26 @@ for (const file of files) {
     continue
   }
 
-  // Logo filename must match slug (e.g. pivotal-mining.png)
-  const logoName = path.parse(data.logo).name
-  if (logoName !== data.slug) {
-    console.error(`❌ ${file} — Logo filename '${logoName}' does not match slug '${data.slug}'`)
+  // Logo is inferred from slug: exactly one matching file must exist
+  const logoMatches = findLogoMatches(data.slug)
+  if (logoMatches.length === 0) {
+    console.error(`❌ ${file} — Logo not found. Add one file in logos/: ${data.slug}.png, ${data.slug}.jpg, or ${data.slug}.webp`)
     errors++
     continue
   }
 
-  // Logo is required; missing or oversized is an error
-  const logoPath = path.join(REPO_ROOT, "logos", data.logo)
-  if (!fs.existsSync(logoPath)) {
-    console.error(`❌ ${file} — Logo not found: ${data.logo}`)
+  if (logoMatches.length > 1) {
+    console.error(`❌ ${file} — Multiple logo files found for slug '${data.slug}': ${logoMatches.join(", ")}`)
     errors++
     continue
-  } else {
-    const size = fs.statSync(logoPath).size
-    if (size > 204800) {
-      console.error(`❌ ${file} — Logo exceeds 200 KB (${size} bytes)`)
-      errors++
-      continue
-    }
+  }
+
+  const logoPath = path.join(logosDir, logoMatches[0])
+  const size = fs.statSync(logoPath).size
+  if (size > 204800) {
+    console.error(`❌ ${file} — Logo exceeds 200 KB (${size} bytes)`)
+    errors++
+    continue
   }
 
   console.log(`✅ ${file}`)
